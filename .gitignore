@@ -1,3 +1,6 @@
+# projects IDE config
+*.user.pro
+
 # Prerequisites
 *.d
 
