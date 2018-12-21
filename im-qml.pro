@@ -12,6 +12,6 @@ SUBDIRS += \
 
 # other files
 OTHER_FILES += \
-	$$PWD/README.md
-	$$PWD/LICENSE
+        $$PWD/README.md \
+        $$PWD/LICENSE
 

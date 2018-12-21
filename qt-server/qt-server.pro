@@ -13,4 +13,9 @@ TARGER = RegisterServer
 
 TEMPLATE = app
 
+# Qt defualt deployment rules target
+qnx: target.path = /tmp/$${TARGET}/bin
+else: unix:!android : target.path = /opt/$${TARGET}/bin
+!isEmpty(target.path): INSTALLS += target
+
 
