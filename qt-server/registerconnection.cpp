@@ -14,4 +14,6 @@ RegisterConnection::RegisterConnection(QObject *parent) : QTcpSocket(parent)
 	this->transferTimerId = 0;
 
 	connect(this,SIGNAL(readyRead()),this,SLOT(processReadyRead()));
+	connect(this,SIGNAL(connected()),this,SLOT(sendGreetingMessage()));
+	connect(this,SIGNAL(error(QAbstractSocket::SocketError)),this,SLOT(handleSocketError(QAbstractSocket::SocketError)));
 }
