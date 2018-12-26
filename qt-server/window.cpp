@@ -42,6 +42,7 @@ Window::Window(QWidget *parent) : QMainWindow(parent) {
 Window::~Window(){
 
 }
+
 //通过网卡接口读取本机的所有的IP地址
 void Window::networkInterfaceCombo() {
 	QList<QHostAddress> list = QNetworkInterface::allAddresses();
@@ -120,5 +121,122 @@ void Window::startNetwork() {
 		
 		if(DEBUG)
 			qDebug() << "Registerserver started.";
+	}else {
+		QMessageBox::waring(this,tr("Error"),tr("Cannot start register server!"));
+		this->appendLogInfo("Cannot start register server.");
+
+		if(DEBUG)
+			qDebug() << "Cannot start register server.";
+		return;
 	}
+
+	connect(this->server,SIGNAL(newRegisterConnection(RegisterConnection *)),this,SLOT(handleNewConnection(RegisterConnection *)));
+}
+
+//停止注册中心服务器
+void Window::stopNetwork() {
+	if(DEBUG)
+		qDebug() << "Register server stopped!";
+	
+	this->appendLogInfo("Register server stopped.";
+	this->server->close();
+	for(int i =0 ; i<this->registerConns.size();i++)
+	{
+		RegisterConnection *c = this->registerConns.at(i);
+		c->close();
+	}
+
+	//Widget update
+	this->registerListWidget->clear();
+	this->startButton->setEnabled(true);
+	this->ipBox->setEnabled(true);
+	this->portBox->setEnabled(true);
+	this->stopButton->setEnabled(false);
+}
+
+//处理新建立的连接，即当有远端客户端发起注册请求时，建立TCP连接，发送注册信息
+void Window::handleNewConnection(RegisterConnection * connection) {
+	if(DEBUG)
+		qDebug() << "Handle new connection.";
+	this->addRegisterConnection(connection);
+
+	connect(connection,SIGNAL(newRegisterMsg(RegisterConnection * ,QString)),
+			this,SLOT(handleNewRegisterMsg(RegisterConnection *,QString)));
+	connect(connection,SIGNAL(registerError(RegisterConnection *,QAbstractSocket::SocketError)),
+			this,SLOT(handleRegisterError(RegisterConnection * ,QAbstractSocket::SocketError)));
+}
+
+//处理新的注册信息,如果注册信息更新，则更新相应的表项
+void Window::handleNewRegisterMsg(RegisterConnection * connection,QString message) {
+	if(DEBUG)
+	{
+		qDebug() << "Enter handle_new_register_msg function: ";
+		qDebug() << "New register message : " << message;
+	}
+
+	QStringList infoList = message.split("@");
+	QString hostName = infoList.at(0);
+	QString addr = infoList.at(1);
+	
+	QStringList addrList = addr.split(":");
+	QString ipStr = addrList.at(0);
+	QHostAddress ip = QHostAddress(ipStr);
+	QString portStr = addrList.at(1);
+	int port = portStr.toInt();
+
+	if(DEBUG)
+	{
+		qDebug() << "Register message infomation:";
+		qDebug() << "HostName: " << hostName;
+		qDebug() << "IP Address: " << ipStr;
+		qDebug() << "Port:" << portStr;
+	}
+
+	PeerInfo * pi = findPeer(hostName,ip,port);
+
+	if(pi)
+	{
+		pi->refresh();
+		this->appendLogInfo("Activate exist register: " + message);
+		if(DEBUG)
+			qDebug() << "Active timer of PeerInfo reset.";
+	}else {
+		pi = new PeerInfo(this,hostName,ip,port);
+		this->addPeerInfoIntoList(pi);
+
+		connect(pi,SIGNAL(peerExpire(PeerInfo *)),this,SLOT(handlePeerTimeout(PeerInfo *)));
+
+		//刷新Register的列表
+		this->updateRegisterListWidget();
+		this->appendLogInfo("New Register: " + message);
+
+		//发送新的PeerList到远端
+		this->broadcastPeerChange();
+	}
+
+	if(DEBUG)
+		qDebug() << "Handle new register msg done.";
+
+}
+
+//处理PeerList 表项过期Peer
+void Window::handlePeerTimeout(PeerInfo * pi){
+	if(DEBUG)
+		qDebug() << "PeerInfo expired: " << pi->getPeerName();
+	this->appendLogInfo("PeerInfo expired : " + pi->getPeerName());
+
+	RegisterConnection *c = this->findConnection(pi);
+
+	this->removePeerInfoFromList(pi);
+	this->removeRegisterConnection(c);
+	this->broadcastPeerChange();
+	this->updateRegisterListWidget();
+
+	if(DEBUG)
+		qDebug() << "Handle expire done.";
+}
+
+//处理注册client断线异常
+void Window::handleRegisterError(RegisterConnection *connection,QAbstractSocket::SocketError error) {
+	
 }
