@@ -16,7 +16,7 @@
 #include <QTimer>
 #include <QMutex>
 
-#include <QQLabel>
+#include <QLabel>
 #include <QLineEdit>
 #include <QTextEdit>
 #include <QTextList>

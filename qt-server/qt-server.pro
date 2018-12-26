@@ -7,9 +7,9 @@
 #-------------------------------------------------------
 QT	+= core gui network
 
-greaterThan(QT_MAJOR_VERSION,5): QT +=widgets
+greaterThan(QT_MAJOR_VERSION,4): QT += widgets
 
-TARGER = RegisterServer
+TARGET = RegisterServer
 
 TEMPLATE = app
 
@@ -22,3 +22,20 @@ else: unix:!android : target.path = /opt/$${TARGET}/bin
 # other files
 OTHER_FILES += $$PWD/images/logo.ico \
     $$PWD/images/icon.rc
+
+HEADERS += \
+    header.h \
+    peerinfo.h \
+    registerconnection.h \
+    registerserver.h \
+    window.h
+
+SOURCES += \
+    main.cpp \
+    peerinfo.cpp \
+    registerconnection.cpp \
+    registerserver.cpp \
+    window.cpp
+
+# ICON
+RC_FILE += images/icon.rc

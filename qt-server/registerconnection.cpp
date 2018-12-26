@@ -1,16 +1,16 @@
 #include "registerconnection.h"
 
 static const int TransferTimeout = 40 * 1000;
-static const char SeparateToken = '  ';
+static const char SeparateToken = ' ';
 
 RegisterConnection::RegisterConnection(QObject *parent) : QTcpSocket(parent)
 {
 	this->greetingMessage = QString("Register Validation");
 	this->registerMessage = QString("");
 	this->state = WaitingForGreeting;
-	this->currentDataType = UNDEFINED;
+    this->currentDataType = UNDEFINED;
 	this->isGreetingMessageSent = false;
-	this->numBytesForCurrentDataType = -1;
+    this->numBytesForCurrentDataType = -1;
 	this->transferTimerId = 0;
 
 	connect(this,SIGNAL(readyRead()),this,SLOT(processReadyRead()));
@@ -57,7 +57,7 @@ void RegisterConnection::sendGreetingMessage(){
 
 bool RegisterConnection::sendPeriodicPeerlistMessage(QString message) {
 	QByteArray peerStr = message.toUtf8();
-	QByteArray msg = "PeerList " + QByteArray::number(peerStr.size()) + ' ' +greet;
+    QByteArray msg = "PeerList " + QByteArray::number(peerStr.size()) + ' ' + peerStr;
 	return this->write(msg) == msg.size();
 }
 
@@ -100,9 +100,10 @@ bool RegisterConnection::hasEnoughData() {
 	}
 
 	if(this->numBytesForCurrentDataType <= 0)
-		this->numBytesForCurrentDataType = this->dataLengthForCurrentData();
+        this->numBytesForCurrentDataType =
+            this-> dataLengthForCurrentDataType();
 
-	if(bytesAvaible() < this->numBytesForCurrentDataType || this->numBytesForCurrentDataType <= 0)
+    if(bytesAvailable() < this->numBytesForCurrentDataType || this->numBytesForCurrentDataType <= 0)
 	{
 		this->transferTimerId = this->startTimer(TransferTimeout);
 		return false;
@@ -205,7 +206,7 @@ bool RegisterConnection::readProtocolHeader(){
 		this->currentDataType = PEERLIST;
 	else
 	{
-		this->currentDataType = UNDIFINED;
+        this->currentDataType = UNDEFINED;
 		this->abort();
 		return false;
 	}

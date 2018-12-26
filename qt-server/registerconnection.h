@@ -31,47 +31,47 @@ public:
 		UNDEFINED
 	};
 
-	explicit RegisterConnection(QObject *parent = 0);
+    explicit RegisterConnection(QObject *parent = nullptr);
 	~RegisterConnection();
 
-	QString 	getPeerServerName();
+    QString         getPeerServerName();
 
 	QHostAddress 	getPeerServerIP();
-	int		getPeerServerPort();
+    int             getPeerServerPort();
 
 signals:
-	void		newRegisterMsg(RegisterConnection *,QString);
-	void		registerError(RegisterConnection *,QAbstractSocket::SocketError);
+    void            newRegisterMsg(RegisterConnection *,QString);
+    void            registerError(RegisterConnection *,QAbstractSocket::SocketError);
 
 protected:
-	void		timerEvent(QTimerEvent *);
+    void            timerEvent(QTimerEvent *);
 
 public slots:
-	void		processReadyRead();
-	void		sendGreetingMessage();
-	bool		sendPeriodicPeerlistMessage(QString message);
-	void		handleSocketError(QAbstractSocket::SocketError);
+    void            processReadyRead();
+    void            sendGreetingMessage();
+    bool            sendPeriodicPeerlistMessage(QString message);
+    void            handleSocketError(QAbstractSocket::SocketError);
 
 private:
-	int		readDataIntoBuffer(int maxSize = MaxBufferSize);
-	int		dataLengthForCurrentDataType();
-	bool		readProtocolHeader();
-	bool		hasEnougthData();
-	void		processData();
+    int             readDataIntoBuffer(int maxSize = MaxBufferSize);
+    int             dataLengthForCurrentDataType();
+    bool            readProtocolHeader();
+    bool            hasEnoughData();
+    void            processData();
 
-	QString		name;
+    QString         name;
 	QHostAddress	ip;
-	int		port;
+    int             port;
 
-	QByteArray	buffer;
-	enum		RegisterConnectionSate state;
-	enum		DataType	currentDateType;
+    QByteArray      buffer;
+    enum            RegisterConnectionState state;
+    enum            DataType	currentDataType;
 
-	int		numBytesForCurrentDateType;
-	int		transferTimerId;
-	bool		isGreetingMessageSent;
-	QString		greetingMessage;
-	QString		registerMessage;
+    int             numBytesForCurrentDataType;
+    int             transferTimerId;
+    bool            isGreetingMessageSent;
+    QString         greetingMessage;
+    QString         registerMessage;
 
 };
 
