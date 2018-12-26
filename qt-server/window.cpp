@@ -238,5 +238,152 @@ void Window::handlePeerTimeout(PeerInfo * pi){
 
 //处理注册client断线异常
 void Window::handleRegisterError(RegisterConnection *connection,QAbstractSocket::SocketError error) {
-	
+	if(DEBUG)
+		qDebug() << "Register connection network error.";
+
+	QString errorString;
+	switch(error)
+	{
+	case QAbstractSocket::ConnectionRefusedError:
+		errorString = "Connection refused!";
+		break;
+	case QAbstractSocket::RemoteHostClosedError:
+		errorString = "Remote host closed.";
+		break;
+	case QAbstractSocket::HostNotFoundError:
+		errorString = "Host not found!";
+		break;
+	case QAbstractSocket::NetworkError:
+		errorString = "Network error.";
+		break;
+	case QAbstractSocket::AddressInUseError:
+		errorString = "Address already in use.";
+		break;
+	case QAbstractSocket::UnknowSocketError:
+	default:
+		errorString = "Remote host closed.";
+		break;
+	}
+	if(DEBUG)
+		qDebug() << "Register connection error: " << errorString;
+
+	this->appendLogInfo("Connection Error:" + errorString);
+
+	PeerInfo *pi = this->findPeer(connection->getPeerServerName(),connection->getPeerServerIP(),connection->getPeerServerPort());
+
+	this->appendLogInfo("Delete register: " + pi->getPeerName());
+	this->removePeerInfoFromList(pi);
+	pi->clear();
+
+	this->removeRegisterConnection(connection);
+	this->broadcastPeerChange();
+	this->updateRegisterListWidget();
+
+	if(DEBUG)
+		qDebug() << "Handle network error done.";
 }
+
+//更新ListWidget控件信息
+void Window::updateRegisterListWidget() {
+	this->registerListWidget->clear();
+	for(int i=0; i < this->peerList.size();i++)
+	{
+		PeerInfo *pi = this->peerList.at(i);
+ 		QString itemString = 
+			pi->getPeerName() + "@" + pi->getPeerIP() + ":" 
+			+ QString::number(pi->getPeerPort());
+
+		this->registerListWidget->addItem(new QListWidgetItem(itemString));
+							
+	}
+
+}
+
+PeerInfo * Window::findPeer(QString name,QHostAddress ip,int port) {
+	for(int i = 0 ;i < this->peerList.size(); i++) {
+		PeerInfo *p = this->peerList.at(i);
+		if(p->getPeerName() == name && 
+				p->getPeerIP() == ip.toString() &&
+				p->getPeerPort() == port)
+			return p;
+	}
+	return NULL;
+}
+
+RegisterConnection * Window::findConnection(PeerInfo * pi){
+	qDebug() << "Enter findConnection.";
+	for(int i=0 ; i < this->registerConns.size();i++) {
+		RegisterConnection *c = this->registerConns.at(i);
+		if(c->getPeerServerName() == pi->getPeerName() 
+				&& c->getPeerServerIP().toString() == pi->getPeerIP() 
+				&& c->getPeerServerPort() == pi->getPeerPort())
+			return c;
+	}
+	return NULL;
+}
+
+QString Window::genPeerListStr() {
+	if(DEBUG)
+		qDebug() << "Generate PeerList String.";
+
+	QString peerListStr("");
+	for(int i = 0; i < this->peerList.size();i++)
+	{
+		PeerInfo *p = this->peerList.at(i);
+		QString peerStr = p->getPeerName() + "@"
+			+ p->getPeerIP() + ":"
+			+ QString::number(p->getPeerPort()) + ";";
+		peerListStr += peerStr;
+	}
+
+	peerListStr.chop(1);
+
+	return peerListStr;
+}
+
+
+void Window::broadcastPeerChange() {
+	if(DEBUG)
+		qDebug() << "Broadcast peerList changed message";
+
+	QString str = this->genPeerListStr();
+
+	for(int i = 0;i < this->registerConns.size(); i++)
+	{
+		RegisterConnection * c = this->registerConns.at(i);
+		c->sendPeriodicPeerlistMessage(str);
+	}
+
+	if(DEBUG)
+		qDebug() << "Add new connection into registerConns.";	
+}
+
+void Window::removeRegisterConnection(RegisterConnection *connection)
+{
+	this->mutex2.lock();
+	this->registerConns.removeOne(connection);
+	connection->deleteLater();
+	this->mutex2.unlock();
+
+	if(DEBUG)
+		qDebug() << "Remove connection from registerConns.";
+}
+
+void Window::addPeerInfoIntoList(PeerInfo *pi) {
+	this->mutex1.lock();
+	this->peerList.removeOne(pi);
+	this->mutex1.unlock();
+
+	if(DEBUG)
+		qDebug() << "Remove PeerInfo from peerList" << pi->getPeerName();
+}
+
+void Window::appendLogInfo(QString msg)
+{
+	QDateTime time = QDateTime::currentDateTime();
+	QString timeString = time.toString("yyyy-MM-dd hh:mm:ss");
+	this->logRegister->append(timeString + " >\n" +msg);
+}
+
+
+
