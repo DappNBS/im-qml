@@ -1,50 +1,54 @@
 #include "window.h"
 
+//窗口界面
 Window::Window(QWidget *parent) : QMainWindow(parent) {
-	this->listLabel = new QLabel(QObject::tr("<b>Register Host List:</b>"),this);
+    //左侧server list
+    this->listLabel             = new QLabel(QObject::tr("<b>Register Host List:</b>"),this);
+    //
+    this->registerListWidget    = new QListWidget(this);
+    //右侧label
+    this->logLabel              = new QLabel(QObject::tr("<b>Register Log:</b>"),this);
+    this->logRegister           = new QTextEdit(this);
 
-	this->registerListWidget = new QListWidget(this);
+    //
+    this->ipLabel               = new QLabel(QObject::tr("Server IP:"),this);
+    this->ipBox                 = new QComboBox(this);
 
-	this->logLabel = new QLabel(QObject::tr("<b>Register Log:</b>"),this);
-
-	this->ipLabel = new QTextEdit(this);
-
-	this->ipLabel = new QLabel(QObject::tr("Server IP:"),this);
-	this->ipBox = new QComboBox(this);
 	this->ipLabel->setBuddy(this->ipBox);
-	this->portLabel = new QLabel(QObject::tr("Server Port:"),this);
-	this->portBox = new QSpinBox(this);
+
+    this->portLabel             = new QLabel(QObject::tr("Server Port:"),this);
+    this->portBox               = new QSpinBox(this);
 	this->portLabel->setBuddy(this->portBox);
 
 	this->networkInterfacesCombo();
 	this->portBox->setRange(1024,65535);
 	this->portBox->setValue(10001);
 
-	this->startButton = new QPushButton(QObject::tr("Start"),this);
-	this->stopButton = new QPushButton(QObject::tr("Stop"),this);
+    this->startButton           = new QPushButton(QObject::tr("Start"),this);
+    this->stopButton            = new QPushButton(QObject::tr("Stop"),this);
 	this->logRegister->setReadOnly(true);
 	this->startButton->setFocusPolicy(Qt::StrongFocus);
 	this->stopButton->setEnabled(false);
 
 	this->peerList.clear();
 	this->registerConns.clear();
-	this->serverIP = QHostAddress("127.0.0.1");
-	this->serverPort = 10001;
-	this->server = new RegisterServer();
+    this->serverIP              = QHostAddress("127.0.0.1");
+    this->serverPort            = 10001;
+    this->server                = new RegisterServer();
 
 	this->initLayout();
-	this->rsize(QSize(550,360));
+    this->resize(QSize(800,550));
 
 	connect(startButton,SIGNAL(clicked()),this,SLOT(startNetwork()));
 	connect(stopButton,SIGNAL(clicked()),this,SLOT(stopNetwork()));
 }
 
 Window::~Window(){
-
+    this->server->close();
 }
 
 //通过网卡接口读取本机的所有的IP地址
-void Window::networkInterfaceCombo() {
+void Window::networkInterfacesCombo() {
 	QList<QHostAddress> list = QNetworkInterface::allAddresses();
 
 	foreach(QHostAddress address,list){
@@ -53,17 +57,20 @@ void Window::networkInterfaceCombo() {
 	}
 }
 
+//初始化窗口布局
 void Window::initLayout() {
-	QVBoxLayout *listLayout = new QVBoxLayout;
-	listLayout->addWidget(this->listLabel);
+    QVBoxLayout *listLayout = new QVBoxLayout; //
+    listLayout->addWidget(this->listLabel); //
 	listLayout->addWidget(this->registerListWidget);
 	
+    //IP Hor
 	QHBoxLayout *ipLayout = new QHBoxLayout;
 	ipLayout->addWidget(this->ipLabel);
-	ipLayout->addWidget(this->portBox);
+    ipLayout->addWidget(this->ipBox);
 	ipLayout->setStretch(0,1);
 	ipLayout->setStretch(1,3);
 
+    //port
 	QHBoxLayout *portLayout = new QHBoxLayout;
 	portLayout->addWidget(this->portLabel);
 	portLayout->addWidget(this->portBox);
@@ -82,8 +89,9 @@ void Window::initLayout() {
 	buttonLayout->addWidget(this->startButton);
 	buttonLayout->addWidget(this->stopButton);
 
+    //水平控件
 	QHBoxLayout *hLayout = new QHBoxLayout;
-	hLayout->addLayout(hLayout);
+    hLayout->addLayout(listLayout);
 	hLayout->addLayout(logLayout);
 	hLayout->setStretch(0,2);
 	hLayout->setStretch(1,3);
@@ -117,12 +125,12 @@ void Window::startNetwork() {
 		this->ipBox->setEnabled(false);
 		this->portBox->setEnabled(false);
 		this->stopButton->setEnabled(true);
-		this->appendLogInfo("Register server started.";
+        this->appendLogInfo("Register server started.");
 		
 		if(DEBUG)
 			qDebug() << "Registerserver started.";
 	}else {
-		QMessageBox::waring(this,tr("Error"),tr("Cannot start register server!"));
+        QMessageBox::warning(this,tr("Error"),tr("Cannot start register server!"));
 		this->appendLogInfo("Cannot start register server.");
 
 		if(DEBUG)
@@ -138,7 +146,7 @@ void Window::stopNetwork() {
 	if(DEBUG)
 		qDebug() << "Register server stopped!";
 	
-	this->appendLogInfo("Register server stopped.";
+    this->appendLogInfo("Register server stopped.");
 	this->server->close();
 	for(int i =0 ; i<this->registerConns.size();i++)
 	{
@@ -167,7 +175,7 @@ void Window::handleNewConnection(RegisterConnection * connection) {
 }
 
 //处理新的注册信息,如果注册信息更新，则更新相应的表项
-void Window::handleNewRegisterMsg(RegisterConnection * connection,QString message) {
+void Window::handleNewRegisterMsg(RegisterConnection * connection ,QString message) {
 	if(DEBUG)
 	{
 		qDebug() << "Enter handle_new_register_msg function: ";
@@ -259,7 +267,7 @@ void Window::handleRegisterError(RegisterConnection *connection,QAbstractSocket:
 	case QAbstractSocket::AddressInUseError:
 		errorString = "Address already in use.";
 		break;
-	case QAbstractSocket::UnknowSocketError:
+    case QAbstractSocket::UnknownSocketError:
 	default:
 		errorString = "Remote host closed.";
 		break;
@@ -307,7 +315,7 @@ PeerInfo * Window::findPeer(QString name,QHostAddress ip,int port) {
 				p->getPeerPort() == port)
 			return p;
 	}
-	return NULL;
+    return nullptr;
 }
 
 RegisterConnection * Window::findConnection(PeerInfo * pi){
@@ -319,7 +327,7 @@ RegisterConnection * Window::findConnection(PeerInfo * pi){
 				&& c->getPeerServerPort() == pi->getPeerPort())
 			return c;
 	}
-	return NULL;
+    return nullptr;
 }
 
 QString Window::genPeerListStr() {
@@ -358,6 +366,15 @@ void Window::broadcastPeerChange() {
 		qDebug() << "Add new connection into registerConns.";	
 }
 
+void Window::addRegisterConnection(RegisterConnection *connection) {
+    this->mutex2.lock();
+    this->registerConns.push_back(connection);
+    this->mutex2.unlock();
+
+    if(DEBUG)
+        qDebug() << "Add new connection into registerConns.";
+}
+
 void Window::removeRegisterConnection(RegisterConnection *connection)
 {
 	this->mutex2.lock();
@@ -376,6 +393,15 @@ void Window::addPeerInfoIntoList(PeerInfo *pi) {
 
 	if(DEBUG)
 		qDebug() << "Remove PeerInfo from peerList" << pi->getPeerName();
+}
+
+void Window::removePeerInfoFromList(PeerInfo *pi){
+    this->mutex1.lock();
+    this->peerList.removeOne(pi);
+    this->mutex1.unlock();
+
+    if(DEBUG)
+        qDebug() << "Remove PeerInfo from peerList " << pi->getPeerName();
 }
 
 void Window::appendLogInfo(QString msg)

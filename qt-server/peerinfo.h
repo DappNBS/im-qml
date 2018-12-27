@@ -13,27 +13,27 @@ public:
 
 	~PeerInfo();
 
-	QString getPeerName();
-	QString getPerrIP();
-	int 	getPeerPort();
+    QString     getPeerName();
+    QString     getPeerIP();
+    int         getPeerPort();
 
-	void	setPeerInfo(QString,QHostAddress,int);
-	void	refresh();
-	void	clear();
+    void        setPeerInfo(QString,QHostAddress,int);
+    void        refresh();
+    void        clear();
 
 signals:
 	void peerExpire(PeerInfo *);
 
 public slots:
-	void handleTimeout();
+    void handleTimeOut();
 
 private:
-	QString 	peerName;
+    QString         peerName;
 	QHostAddress	peerIP;
-	int		peerPort;
-	bool		state;
+    int             peerPort;
+    bool            state;
 
-	QTimer		*activeTimer;
+    QTimer          *activeTimer;
 
 };
 #endif //PEERINFO_H /END

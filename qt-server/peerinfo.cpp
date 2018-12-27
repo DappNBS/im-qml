@@ -4,13 +4,13 @@
 static const int TimeOut = 22*1000;
 
 PeerInfo::PeerInfo(QObject *parent,QString peername,QHostAddress ip,int port) :
-	QOject(parent)
+    QObject(parent)
 {
 	this->setPeerInfo(peername,ip,port);
 	this->state = true;
 	this->activeTimer = new QTimer();
 	this->activeTimer->setInterval(TimeOut);
-	this->activeTimer->Start();
+    this->activeTimer->start();
 
 	if(DEBUG)
 		qDebug() << "PeerInfo active timer started.";
@@ -28,7 +28,7 @@ QString PeerInfo::getPeerName()
 }
 
 QString PeerInfo::getPeerIP() {
-	return this->peerIP.toString;
+    return this->peerIP.toString();
 }
 
 int PeerInfo::getPeerPort(){
@@ -42,6 +42,7 @@ void PeerInfo::setPeerInfo(QString peername,QHostAddress ip,int port)
 	this->peerPort = port;
 }
 
+//处理超时
 void PeerInfo::handleTimeOut()
 {
 	this->state =false;

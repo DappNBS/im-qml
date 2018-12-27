@@ -39,3 +39,7 @@ SOURCES += \
 
 # ICON
 RC_FILE += images/icon.rc
+
+DISTFILES += \
+    Makefile \
+    Makefile.Release
