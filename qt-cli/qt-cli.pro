@@ -27,12 +27,16 @@ CONFIG += c++11
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-    logindialog.cpp
+    logindialog.cpp \
+    chatdialog.cpp \
+    cliconnection.cpp
 
 HEADERS += \
         mainwindow.h \
     logindialog.h \
-    header.h
+    header.h \
+    chatdialog.h \
+    cliconnection.h
 
 FORMS += \
         mainwindow.ui
