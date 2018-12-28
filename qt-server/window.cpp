@@ -125,10 +125,11 @@ void Window::startNetwork() {
 		this->ipBox->setEnabled(false);
 		this->portBox->setEnabled(false);
 		this->stopButton->setEnabled(true);
-        this->appendLogInfo("Register server started.");
+        this->appendLogInfo("Register server started.",this->serverIP,this->serverPort);
 		
 		if(DEBUG)
-			qDebug() << "Registerserver started.";
+            qDebug() << "Registerserver started. on ["
+                     << this->serverIP.toString() << ":" << this->serverPort << "].";
 	}else {
         QMessageBox::warning(this,tr("Error"),tr("Cannot start register server!"));
 		this->appendLogInfo("Cannot start register server.");
@@ -411,5 +412,13 @@ void Window::appendLogInfo(QString msg)
 	this->logRegister->append(timeString + " >\n" +msg);
 }
 
+void Window::appendLogInfo(QString msg,QHostAddress serIP,int serPort) {
+    QDateTime time = QDateTime::currentDateTime();
+    QString timeString = time.toString("yyyy-MM-dd hh:mm:ss");
+    this->logRegister->append(timeString
+                              + ">\n"+msg +
+                              "no [" + serIP.toString() +
+                              ":" + QString::number(serPort) + "]");
+}
 
 

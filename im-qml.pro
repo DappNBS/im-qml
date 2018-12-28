@@ -8,7 +8,8 @@ TEMPLATE = subdirs
 
 # sub dirs
 SUBDIRS += \
-	qt-server
+	qt-server \
+    qt-cli
 
 # other files
 OTHER_FILES += \

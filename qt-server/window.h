@@ -30,6 +30,7 @@ private:
     void networkInterfacesCombo();
     void updateRegisterListWidget();
     void appendLogInfo(QString);
+    void appendLogInfo(QString,QHostAddress,int);
 
     QString genPeerListStr();
     PeerInfo* findPeer(QString,QHostAddress,int);
