@@ -156,3 +156,9 @@ int Logindialog::getLocalServerPort(){
     return this->localPortBox->value();
 }
 
+QString Logindialog::getLocalServerIP(){
+    QString serverIp = this->registerIpEdit->text();
+    if(serverIp.isEmpty())
+        serverIp = "192.168.103.99";
+    return serverIp;
+}
