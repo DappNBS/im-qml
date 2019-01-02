@@ -93,6 +93,24 @@ void MainWindow::initNetwork(){
         if(DEBUG)
             qDebug() << "Local chat server started.";
     }else{
-        //
+        this->remoteServerLabel->setText("Cannot start local chat server.");
+
+        this->registerButton->setEnabled(true);
+
+        QMessageBox::warning(this,tr("ERROR"),tr("Cannot start local chat server!"));
+
+        if(DEBUG)
+            qDebug() << "Cannot start local chat server.";
+
+        return;
     }
+
+    connect(server,SIGNAL(newCliConnection(CliConnection*)),this,
+            SLOT(handlePassiveConnection(CliConnection*)));
+
+    //连接注册中心注册服务器
+    if(DEBUG)
+        qDebug() << "Connect to register server.";
+
+
 }
