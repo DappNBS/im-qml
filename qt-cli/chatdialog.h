@@ -34,7 +34,7 @@ private:
     QLabel          *peerName;
     QLabel          *peerAddress;
     QTextEdit       *logChat;
-    QTextLine       *msgSend;
+    QLineEdit       *msgSend;
     QPushButton     *sendButton;
 
     QString         userName;

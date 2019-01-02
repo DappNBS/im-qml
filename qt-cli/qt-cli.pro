@@ -29,14 +29,20 @@ SOURCES += \
         mainwindow.cpp \
     logindialog.cpp \
     chatdialog.cpp \
-    cliconnection.cpp
+    cliconnection.cpp \
+    cliserver.cpp \
+    registerconnection.cpp \
+    peerinfo.cpp
 
 HEADERS += \
         mainwindow.h \
     logindialog.h \
     header.h \
     chatdialog.h \
-    cliconnection.h
+    cliconnection.h \
+    cliserver.h \
+    registerconnection.h \
+    peerinfo.h
 
 FORMS += \
         mainwindow.ui

@@ -63,6 +63,14 @@ bool CliConnection::sendMessage(const QString message){
     return this->write(data) == data.size();
 }
 
+//发送greeting消息
+void CliConnection::sendGreetingMessage(){
+    QByteArray greeting = this->greetingMessage.toUtf8();
+    QByteArray data = "MESSAGE "+QByteArray::number(greeting.size())+' ' + greeting;
+    if(this->write(data) == data.size())
+        isGreetingMessageSent = true;
+}
+
 //读取当前消息到buffer，返回读取长度
 int CliConnection::readDataIntoBuffer(int maxSize){
     if(maxSize > MaxBufferSize)
