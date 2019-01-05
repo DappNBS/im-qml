@@ -111,6 +111,14 @@ void MainWindow::initNetwork(){
     //连接注册中心注册服务器
     if(DEBUG)
         qDebug() << "Connect to register server.";
+    this->registerConnection->setLocalServerInfo(this->userName,this->localServerIP,this->localServerPort);
+    this->registerConnection->connectToHost(this->remoteServerIP,this->remoteServerPort);
 
+    if(DEBUG)
+        qDebug() << "Connected to register server.";
+    connect(registerConnection,SIGNAL(newPeerList(QString&))
+            ,this,SLOT(handleNewPeerList(QString &)));
+    connect(registerConnection,SIGNAL(error(QAbstractSocket::SocketError))
+            ,this,SLOT(QAbstractSocket::SocketError));
 
 }
