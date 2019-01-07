@@ -50,6 +50,7 @@ void MainWindow::initLayout(){
     cliLayout->addWidget(registerButton);
     cliLayout->addStretch();
     cliLayout->addWidget(checkButton);
+    cliLayout->addWidget(cliButton);
 
     QVBoxLayout *mainLayout = new QVBoxLayout;
 
@@ -130,9 +131,9 @@ void MainWindow::handleRegisterAction() {
     }
 
     this->userName = ld->getUserName();
-    this->localServerIP = ld->getLocalServerIP();
+    this->localServerIP = QHostAddress(ld->getLocalServerIP());
     this->localServerPort = ld->getLocalServerPort();
-    this->remoteServerIP = ld->getRegisterServerIP();
+    this->remoteServerIP = QHostAddress(ld->getRegisterServerIP());
     this->remoteServerPort = ld->getRegisterServerPort();
 
     if(DEBUG)
@@ -233,4 +234,230 @@ void MainWindow::handleActiveConnection(){
 
     QString connInfo = item->text();
 
+    QStringList strList = connInfo.split("@");
+    QString name = strList.at(0);
+    QString addr = strList.at(1);
+
+    QStringList addrList = addr.split(":");
+    QString ipStr = addrList.at(0);
+    QString portExtStr = addrList.at(1);
+
+    QHostAddress ip = QHostAddress(ipStr);
+    QStringList eList = portExtStr.split(" ");
+    QString portStr = eList.at(0);
+    int port = portStr.toInt();
+
+    if(name == this->userName && ipStr == this->localServerIP.toString()
+            && port == this->localServerPort){
+        QMessageBox::warning(this,tr("Warning"),tr("Cannot select local server."));
+
+        if(DEBUG)
+            qDebug() << "Select local server to connect.";
+        return;
+    }
+
+    CliConnection *cc = this->findCliConnection(name,ipStr);
+
+    if(cc){
+        QMessageBox::warning(this,tr("Warning"),tr("Connection already established."));
+        if(DEBUG)
+            qDebug() << "New error:Connection already established.";
+        return;
+    }
+
+    if(DEBUG)
+    {
+        qDebug() << "Established chat connection to selected peer.";
+        qDebug() << "Remote peer ip: " << ip.toString();
+        qDebug() << "Remote peer port:" << port;
+    }
+
+    CliConnection *newConnection = new CliConnection();
+    QString greeting = this->userName + ":"+this->localServerIP.toString()
+            + ":" + QString::number(this->localServerPort);
+
+    newConnection->setGreetingMessage(greeting);
+    newConnection->connectToHost(ip,port);
+
+    this->addCliConnection(newConnection);
+
+    connect(newConnection,SIGNAL(socketError(CliConnection*,QAbstractSocket::SocketError)),
+            this,SLOT(handleCliConnectionError(CliConnection*,QAbstractSocket::SocketError)));
+    connect(newConnection,SIGNAL(endGreeting(CliConnection*)),this,
+            SLOT(handleNewChatDialog(CliConnection *)));
+
+    if(DEBUG)
+        qDebug() << "Open new chat dialog to display chat process.";
+}
+
+void MainWindow::handleNewChatDialog(CliConnection *connection){
+    QString peerName = connection->getPeerName();
+    QString peerAddr = connection->getPeerIP()+":" +QString::number(connection->getPeerPort());
+
+    ChatDialog *newChat = new ChatDialog(this,this->userName,peerName,peerAddr,connection);
+
+    connect(newChat,SIGNAL(dialogExit(CliConnection *)),
+            this,SLOT(handleDialogExit(CliConnection *)));
+
+    newChat->show();
+}
+
+void MainWindow::handleCheckDialog(){
+    QListWidgetItem *item = this->peerListWidget->currentItem();
+
+    if(!item){
+        QMessageBox::warning(this,tr("Warning"),tr("Please select one peer."));
+
+        if(DEBUG)
+            qDebug() << "Select no peer to read message.";
+        return;
+    }
+
+    QString connInfo = item->text();
+    QStringList strList = connInfo.split("@");
+    QString name = strList.at(0);
+    QString addr = strList.at(1);
+
+    QStringList addrList = addr.split(":");
+    QString ipStr = addrList.at(0);
+
+    CliConnection *cc = this->findCliConnection(name,ipStr);
+    if(!cc){
+        QMessageBox::warning(this,tr("Warning"),tr("No Connection or connection broked."));
+
+        if(DEBUG)
+            qDebug() << "No connection or connection broked.";
+        return;
+    }
+
+    ChatDialog *newChat = new ChatDialog(this,this->userName,name,addr,cc);
+
+    connect(newChat,SIGNAL(dialogExit(CliConnection *)),this,SLOT(handleDialogExit(CliConnection *)));
+
+    QList<QString> hList = this->tempMsgs[name];
+
+    newChat->readAndDisplayHistory(hList);
+    this->tempMsgs.remove(name);
+    this->updateListWidget();
+
+    newChat->show();
+}
+
+void MainWindow::handlePassiveNewCli(CliConnection *connection){
+    QList<QString> rcvInfoMsgs;
+    QString name = connection->getPeerName();
+
+    this->tempMsgs.insert(name,rcvInfoMsgs);
+    connect(connection,SIGNAL(newMessage(QString,QString)),
+            this,SLOT(handlePassiveMsgRecv(QString,QString)));
+}
+void MainWindow::handlePassiveMsgRecv(QString from,QString msg){
+    QDateTime time = QDateTime::currentDateTime();
+    QString timeString = time.toString("hh:mm:ss MM-dd");
+    QString infoString = from + "(" +timeString + "): \n";
+    QString infoMsg = infoString + msg +"\n";
+    this->tempMsgs[from].push_back(infoMsg);
+    this->updateListWidget();
+
+    if(DEBUG)
+        qDebug() << "Handle passive received message done.";
+}
+
+void MainWindow::handleCliConnectionError(CliConnection *connection,QAbstractSocket::SocketError error){
+    if(DEBUG)
+        qDebug() << "Chat connection Error.";
+
+    QString errorString;
+    switch (error) {
+    case QAbstractSocket::ConnectionRefusedError:
+        errorString = "Connection refused!";
+        break;
+    case QAbstractSocket::RemoteHostClosedError:
+        errorString = "Remote host closed.";
+        break;
+    case QAbstractSocket::HostNotFoundError:
+        errorString = "Host not found!";
+        break;
+    case QAbstractSocket::NetworkError:
+        errorString = "Network error!";
+        break;
+    case QAbstractSocket::UnknownSocketError:
+    default:
+        errorString = "Unknow socket error!";
+        break;
+    }
+
+    connection->close();
+    this->removeCliConnection(connection);
+
+    if(DEBUG){
+        qDebug() << "Chat connection error:" << errorString;
+        qDebug() << "Handle chat connection error done.";
+    }
+}
+
+void MainWindow::handleRegisterError(QAbstractSocket::SocketError error){
+    if(DEBUG)
+        qDebug() << "Register network error.";
+
+    QString errorString;
+    switch (error) {
+    case QAbstractSocket::ConnectionRefusedError:
+        errorString = "Connection refused!";
+        break;
+    case QAbstractSocket::RemoteHostClosedError:
+        errorString = "Remote host closed.";
+        break;
+    case QAbstractSocket::HostNotFoundError:
+        errorString = "Host net found!";
+        break;
+    case QAbstractSocket::AddressInUseError:
+        errorString = "Address already in used!";
+        break;
+    case QAbstractSocket::UnknownSocketError:
+    default:
+        errorString = "Unknow socket error!";
+        break;
+    }
+
+    this->server->close();
+    this->registerConnection->close();
+
+    this->peerList.clear();
+    this->peerListWidget->clear();
+    this->registerButton->setEnabled(true);
+    this->remoteServerLabel->setText("No set register server info.");
+
+    QMessageBox::warning(this,tr("Register Error"),errorString);
+    if(DEBUG)
+        qDebug() << "Handle register network error done.";
+}
+
+void MainWindow::addCliConnection(CliConnection * connection){
+    this->connList.push_back(connection);
+
+    if(DEBUG)
+        qDebug() << "Add new chat connection to connection list.";
+}
+
+void MainWindow::removeCliConnection(CliConnection * connection){
+    this->connList.removeOne(connection);
+    if(DEBUG)
+        qDebug() << "Remove chat connection from connection list.";
+}
+
+
+CliConnection * MainWindow::findCliConnection(QString name, QString ip){
+    for(int i=0; i< this->connList.size();i++){
+        CliConnection *cc = this->connList.at(i);
+
+        qDebug() << "cli connection name:" << cc->getPeerName();
+        qDebug() << "cli connection ip:" << cc->getPeerIP();
+        qDebug() << "cli connection port:" << cc->getPeerPort();
+
+        if((cc->getPeerName() == name) && (cc->getPeerIP() == ip))
+            return cc;
+    }
+
+    return nullptr;
 }
